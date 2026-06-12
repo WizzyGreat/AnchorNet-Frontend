@@ -28,6 +28,32 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Configuration
+
+The dashboard talks to the AnchorNet API. Copy `.env.example` to `.env.local`
+and point it at your backend:
+
+```bash
+cp .env.example .env.local
+# NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+## Pages
+
+- `/` – landing page with an overview and a link to the dashboard
+- `/dashboard` – live liquidity dashboard:
+  - summary stats (assets, total liquidity, anchor positions)
+  - a table of aggregated pools with loading / error / empty states
+  - a routing **quote form** that previews fees, deliverable amount, and route
+
+### Structure
+
+```
+src/app/         routes (landing, dashboard)
+src/components/   UI (Card, StatCard, PoolTable, PoolsPanel, QuoteForm, SiteHeader)
+src/lib/          types, formatting helpers, API client
+```
+
 ## Scripts
 
 | Command | Description |
