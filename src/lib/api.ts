@@ -34,21 +34,34 @@ async function parseError(res: Response): Promise<ApiRequestError> {
   }
 }
 
+/**
+ * Performs a JSON request against the API and returns the parsed body.
+ * Throws {@link ApiRequestError} on a non-2xx response.
+ */
+export async function apiRequest<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
+  const headers: Record<string, string> = { ...(init?.headers as object) };
+  if (init?.body) headers["Content-Type"] = "application/json";
+
+  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  if (!res.ok) throw await parseError(res);
+  return (await res.json()) as T;
+}
+
 /** Fetches the aggregated liquidity pools. */
 export async function fetchPools(signal?: AbortSignal): Promise<Pool[]> {
-  const res = await fetch(`${API_BASE_URL}/api/v1/liquidity`, { signal });
-  if (!res.ok) throw await parseError(res);
-  const body = (await res.json()) as { pools: Pool[] };
+  const body = await apiRequest<{ pools: Pool[] }>("/api/v1/liquidity", {
+    signal,
+  });
   return body.pools;
 }
 
 /** Requests a routing quote for an asset/amount pair. */
 export async function requestQuote(input: QuoteRequest): Promise<Quote> {
-  const res = await fetch(`${API_BASE_URL}/api/v1/quote`, {
+  return apiRequest<Quote>("/api/v1/quote", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-  if (!res.ok) throw await parseError(res);
-  return (await res.json()) as Quote;
 }
