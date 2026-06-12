@@ -1,0 +1,75 @@
+import { Settlement } from "@/lib/types";
+import { formatAmount } from "@/lib/format";
+import { StatusBadge } from "./StatusBadge";
+import { EmptyState } from "./EmptyState";
+
+/** Renders settlements with execute/cancel actions for pending rows. */
+export function SettlementTable({
+  settlements,
+  onExecute,
+  onCancel,
+}: {
+  settlements: Settlement[];
+  onExecute?: (id: number) => void;
+  onCancel?: (id: number) => void;
+}) {
+  if (settlements.length === 0) {
+    return <EmptyState message="No settlements yet." />;
+  }
+
+  const actionable = Boolean(onExecute || onCancel);
+
+  return (
+    <table className="w-full text-left text-sm">
+      <thead>
+        <tr className="border-b border-zinc-800 text-zinc-400">
+          <th className="py-2 font-medium">#</th>
+          <th className="py-2 font-medium">Anchor</th>
+          <th className="py-2 font-medium">Asset</th>
+          <th className="py-2 font-medium">Amount</th>
+          <th className="py-2 font-medium">Fee</th>
+          <th className="py-2 font-medium">Status</th>
+          {actionable ? <th className="py-2" /> : null}
+        </tr>
+      </thead>
+      <tbody>
+        {settlements.map((s) => (
+          <tr key={s.id} className="border-b border-zinc-900">
+            <td className="py-2 text-zinc-500">{s.id}</td>
+            <td className="py-2 font-mono text-xs text-zinc-300">{s.anchor}</td>
+            <td className="py-2 font-mono text-zinc-100">{s.asset}</td>
+            <td className="py-2 text-zinc-200">{formatAmount(s.amount)}</td>
+            <td className="py-2 text-zinc-400">{formatAmount(s.fee)}</td>
+            <td className="py-2">
+              <StatusBadge status={s.status} />
+            </td>
+            {actionable ? (
+              <td className="py-2 text-right">
+                {s.status === "pending" ? (
+                  <span className="flex justify-end gap-2">
+                    {onExecute ? (
+                      <button
+                        onClick={() => onExecute(s.id)}
+                        className="rounded-md px-2 py-1 text-xs text-emerald-400 hover:text-emerald-300"
+                      >
+                        Execute
+                      </button>
+                    ) : null}
+                    {onCancel ? (
+                      <button
+                        onClick={() => onCancel(s.id)}
+                        className="rounded-md px-2 py-1 text-xs text-red-400 hover:text-red-300"
+                      >
+                        Cancel
+                      </button>
+                    ) : null}
+                  </span>
+                ) : null}
+              </td>
+            ) : null}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
