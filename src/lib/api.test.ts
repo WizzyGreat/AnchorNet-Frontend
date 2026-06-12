@@ -1,0 +1,69 @@
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { fetchPools, requestQuote, ApiRequestError } from "./api";
+
+function mockFetch(status: number, body: unknown) {
+  return vi.fn().mockResolvedValue({
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: "Mock",
+    json: async () => body,
+  });
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe("fetchPools", () => {
+  it("returns the pools array on success", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetch(200, { pools: [{ asset: "USDC", total: 100, anchors: 1 }] }),
+    );
+
+    const pools = await fetchPools();
+    expect(pools).toHaveLength(1);
+    expect(pools[0].asset).toBe("USDC");
+  });
+
+  it("throws ApiRequestError on a non-2xx response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetch(500, { error: { code: "INTERNAL", message: "boom" } }),
+    );
+
+    await expect(fetchPools()).rejects.toBeInstanceOf(ApiRequestError);
+  });
+});
+
+describe("requestQuote", () => {
+  it("returns the quote on success", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetch(200, {
+        asset: "USDC",
+        amount: 1000,
+        fee: 1,
+        deliverable: 999,
+        route: ["big"],
+      }),
+    );
+
+    const quote = await requestQuote({ asset: "USDC", amount: 1000 });
+    expect(quote.deliverable).toBe(999);
+    expect(quote.route).toEqual(["big"]);
+  });
+
+  it("propagates the API error code", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetch(400, {
+        error: { code: "INSUFFICIENT_LIQUIDITY", message: "nope" },
+      }),
+    );
+
+    await expect(
+      requestQuote({ asset: "USDC", amount: 999999 }),
+    ).rejects.toMatchObject({ code: "INSUFFICIENT_LIQUIDITY" });
+  });
+});
