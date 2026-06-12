@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
+import { MetricsBar } from "@/components/MetricsBar";
 import { PoolsPanel } from "@/components/PoolsPanel";
 import { QuoteForm } from "@/components/QuoteForm";
 
@@ -20,7 +21,11 @@ export default function DashboardPage() {
           Aggregated anchor liquidity and routing quotes from the AnchorNet API.
         </p>
 
-        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="mt-8">
+          <MetricsBar />
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <PoolsPanel />
           </div>
