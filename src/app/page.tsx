@@ -33,7 +33,45 @@ export default function Home() {
             Learn more
           </a>
         </div>
+
+        <div className="mt-16 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <FeatureLink
+            href="/dashboard"
+            title="Dashboard"
+            body="Live pools, liquidity totals and routing quotes."
+          />
+          <FeatureLink
+            href="/anchors"
+            title="Anchors"
+            body="Register and manage liquidity-providing anchors."
+          />
+          <FeatureLink
+            href="/settlements"
+            title="Settlements"
+            body="Open, execute and cancel cross-anchor settlements."
+          />
+        </div>
       </main>
     </div>
+  );
+}
+
+function FeatureLink({
+  href,
+  title,
+  body,
+}: {
+  href: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 hover:border-zinc-700"
+    >
+      <div className="text-sm font-semibold text-zinc-100">{title}</div>
+      <p className="mt-1 text-sm text-zinc-400">{body}</p>
+    </Link>
   );
 }
