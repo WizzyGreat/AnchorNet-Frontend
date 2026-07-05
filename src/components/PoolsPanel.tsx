@@ -7,6 +7,7 @@ import { formatAmount } from "@/lib/format";
 import { Card } from "./Card";
 import { StatCard } from "./StatCard";
 import { PoolTable } from "./PoolTable";
+import { TableSkeleton } from "./TableSkeleton";
 
 type LoadState =
   | { status: "loading" }
@@ -41,7 +42,8 @@ export function PoolsPanel() {
   if (state.status === "loading") {
     return (
       <Card>
-        <p className="text-sm text-zinc-400">Loading pools…</p>
+        <h2 className="mb-3 text-sm font-semibold text-zinc-200">Pools</h2>
+        <TableSkeleton columns={3} />
       </Card>
     );
   }

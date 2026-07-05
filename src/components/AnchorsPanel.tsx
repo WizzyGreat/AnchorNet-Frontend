@@ -10,7 +10,7 @@ import { Anchor } from "@/lib/types";
 import { useAsync } from "@/hooks/useAsync";
 import { useToast } from "@/hooks/useToast";
 import { Card } from "./Card";
-import { Spinner } from "./Spinner";
+import { TableSkeleton } from "./TableSkeleton";
 import { AnchorForm } from "./AnchorForm";
 import { AnchorTable } from "./AnchorTable";
 
@@ -74,7 +74,7 @@ export function AnchorsPanel() {
       </Card>
       <Card>
         {state.status === "loading" ? (
-          <Spinner label="Loading anchors…" />
+          <TableSkeleton columns={3} />
         ) : state.status === "error" ? (
           <p className="text-sm text-red-400">{state.message}</p>
         ) : (

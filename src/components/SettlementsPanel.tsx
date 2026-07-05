@@ -11,7 +11,7 @@ import { Settlement, Pagination } from "@/lib/types";
 import { pluralize } from "@/lib/format";
 import { useToast } from "@/hooks/useToast";
 import { Card } from "./Card";
-import { Spinner } from "./Spinner";
+import { TableSkeleton } from "./TableSkeleton";
 import { SettlementForm } from "./SettlementForm";
 import { SettlementTable } from "./SettlementTable";
 
@@ -113,7 +113,7 @@ export function SettlementsPanel() {
       </Card>
       <Card>
         {state.status === "loading" ? (
-          <Spinner label="Loading settlements…" />
+          <TableSkeleton columns={6} />
         ) : state.status === "error" ? (
           <p className="text-sm text-red-400">{state.message}</p>
         ) : (
