@@ -2,6 +2,24 @@
 
 All notable changes to the AnchorNet web app are documented here.
 
+## [0.3.0]
+
+### Added
+
+- **Settlements:** "Load more" pagination over `/api/v1/settlements`, paging
+  through `?page=`/`?pageSize=` instead of fetching the full list up front.
+- **Validation:** inline, field-level error messages on `AnchorForm` and
+  `SettlementForm` instead of silently ignoring an invalid submission.
+- **Toasts:** an app-wide `ToastProvider`/`useToast` notification stack,
+  surfacing success and error feedback for register, deactivate, open,
+  execute and cancel actions.
+- **Anchors:** client-side status filter tabs (All / Active / Inactive) over
+  the fetched anchor list.
+- **Loading UX:** an animated `TableSkeleton` in place of a bare "Loading…"
+  line for the anchors, settlements and pools tables.
+- **Tests:** Vitest coverage for settlement pagination and the toast stack
+  helpers.
+
 ## [0.2.0]
 
 ### Added
