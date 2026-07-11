@@ -9,6 +9,7 @@ import {
 } from "@/lib/settlementsApi";
 import { Settlement, Pagination } from "@/lib/types";
 import { pluralize } from "@/lib/format";
+import { matchesQuery } from "@/lib/search";
 import { useToast } from "@/hooks/useToast";
 import { Card } from "./Card";
 import { TableSkeleton } from "./TableSkeleton";
@@ -30,6 +31,7 @@ export function SettlementsPanel() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [moreError, setMoreError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [query, setQuery] = useState("");
   const { notify } = useToast();
 
   const reload = useCallback(() => {
@@ -103,6 +105,13 @@ export function SettlementsPanel() {
     setPending(false);
   }
 
+  const visibleSettlements =
+    state.status === "ready"
+      ? state.settlements.filter((s) =>
+          matchesQuery([s.id, s.anchor, s.asset], query),
+        )
+      : [];
+
   return (
     <div className="space-y-6">
       <Card>
@@ -118,15 +127,32 @@ export function SettlementsPanel() {
           <p className="text-sm text-red-400">{state.message}</p>
         ) : (
           <>
-            <SettlementTable
-              settlements={state.settlements}
-              onExecute={(id) =>
-                run(() => executeSettlement(id), `Executed settlement #${id}.`)
-              }
-              onCancel={(id) =>
-                run(() => cancelSettlement(id), `Cancelled settlement #${id}.`)
-              }
-            />
+            {state.settlements.length > 0 ? (
+              <div className="mb-3 flex justify-end">
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search settlements…"
+                  aria-label="Search settlements"
+                  className="w-full max-w-48 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs text-zinc-100 outline-none focus:border-zinc-600"
+                />
+              </div>
+            ) : null}
+            {visibleSettlements.length === 0 && state.settlements.length > 0 ? (
+              <p className="py-6 text-center text-sm text-zinc-500">
+                No settlements match your search.
+              </p>
+            ) : (
+              <SettlementTable
+                settlements={visibleSettlements}
+                onExecute={(id) =>
+                  run(() => executeSettlement(id), `Executed settlement #${id}.`)
+                }
+                onCancel={(id) =>
+                  run(() => cancelSettlement(id), `Cancelled settlement #${id}.`)
+                }
+              />
+            )}
             {state.pagination.page < state.pagination.totalPages ? (
               <div className="mt-4 flex flex-col items-center gap-2">
                 <button
