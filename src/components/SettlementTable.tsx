@@ -1,8 +1,17 @@
+"use client";
+
 import Link from "next/link";
 import { Settlement } from "@/lib/types";
 import { formatAmount } from "@/lib/format";
+import { useSortableData, SortState } from "@/hooks/useSortableData";
 import { StatusBadge } from "./StatusBadge";
 import { EmptyState } from "./EmptyState";
+
+type SortKey = "anchor" | "amount" | "status";
+
+function getSortValue(settlement: Settlement, key: SortKey): string | number {
+  return settlement[key];
+}
 
 /** Renders settlements with execute/cancel actions for pending rows. */
 export function SettlementTable({
@@ -14,6 +23,11 @@ export function SettlementTable({
   onExecute?: (id: number) => void;
   onCancel?: (id: number) => void;
 }) {
+  const { sorted, sort, requestSort } = useSortableData<Settlement, SortKey>(
+    settlements,
+    getSortValue,
+  );
+
   if (settlements.length === 0) {
     return <EmptyState message="No settlements yet." />;
   }
@@ -25,16 +39,31 @@ export function SettlementTable({
       <thead>
         <tr className="border-b border-zinc-800 text-zinc-400">
           <th className="py-2 font-medium">#</th>
-          <th className="py-2 font-medium">Anchor</th>
+          <SortableHeader
+            label="Anchor"
+            sortKey="anchor"
+            sort={sort}
+            onSort={requestSort}
+          />
           <th className="py-2 font-medium">Asset</th>
-          <th className="py-2 font-medium">Amount</th>
+          <SortableHeader
+            label="Amount"
+            sortKey="amount"
+            sort={sort}
+            onSort={requestSort}
+          />
           <th className="py-2 font-medium">Fee</th>
-          <th className="py-2 font-medium">Status</th>
+          <SortableHeader
+            label="Status"
+            sortKey="status"
+            sort={sort}
+            onSort={requestSort}
+          />
           {actionable ? <th className="py-2" /> : null}
         </tr>
       </thead>
       <tbody>
-        {settlements.map((s) => (
+        {sorted.map((s) => (
           <tr key={s.id} className="border-b border-zinc-900">
             <td className="py-2 text-zinc-500">
               <Link href={`/settlements/${s.id}`} className="hover:underline">
@@ -76,5 +105,34 @@ export function SettlementTable({
         ))}
       </tbody>
     </table>
+  );
+}
+
+function SortableHeader({
+  label,
+  sortKey,
+  sort,
+  onSort,
+}: {
+  label: string;
+  sortKey: SortKey;
+  sort: SortState<SortKey> | null;
+  onSort: (key: SortKey) => void;
+}) {
+  const active = sort?.key === sortKey;
+  const indicator = active ? (sort?.direction === "asc" ? "▲" : "▼") : "";
+
+  return (
+    <th className="py-2 font-medium">
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        aria-label={`Sort by ${label}`}
+        className="flex items-center gap-1 hover:text-zinc-200"
+      >
+        {label}
+        <span className="w-2 text-[10px] text-zinc-500">{indicator}</span>
+      </button>
+    </th>
   );
 }
