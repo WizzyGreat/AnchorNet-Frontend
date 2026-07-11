@@ -1,0 +1,64 @@
+import { describe, it, expect } from "vitest";
+import { render, screen, fireEvent, within } from "@testing-library/react";
+import { AnchorTable } from "./AnchorTable";
+import { Anchor } from "@/lib/types";
+
+function anchor(overrides: Partial<Anchor>): Anchor {
+  return {
+    id: "a",
+    name: "A",
+    registeredAt: "2024-01-01T00:00:00.000Z",
+    active: true,
+    ...overrides,
+  };
+}
+
+const anchors: Anchor[] = [
+  anchor({ id: "c", name: "Charlie", registeredAt: "2024-03-01T00:00:00.000Z" }),
+  anchor({ id: "a", name: "Alpha", registeredAt: "2024-01-01T00:00:00.000Z" }),
+  anchor({ id: "b", name: "Bravo", registeredAt: "2024-02-01T00:00:00.000Z" }),
+];
+
+function nameCells() {
+  const rows = screen.getAllByRole("row").slice(1); // skip the header row
+  return rows.map((row) => within(row).getAllByRole("cell")[0].textContent);
+}
+
+describe("AnchorTable", () => {
+  it("renders an empty state when there are no anchors", () => {
+    render(<AnchorTable anchors={[]} />);
+    expect(screen.getByText("No anchors registered yet.")).toBeInTheDocument();
+  });
+
+  it("renders rows in their original order by default", () => {
+    render(<AnchorTable anchors={anchors} />);
+    expect(nameCells()).toEqual([
+      "Charliec",
+      "Alphaa",
+      "Bravob",
+    ]);
+  });
+
+  it("sorts ascending by anchor name on the first click", () => {
+    render(<AnchorTable anchors={anchors} />);
+    fireEvent.click(screen.getByLabelText("Sort by Anchor"));
+    expect(nameCells()).toEqual(["Alphaa", "Bravob", "Charliec"]);
+  });
+
+  it("sorts descending by registered date on a second click", () => {
+    render(<AnchorTable anchors={anchors} />);
+    fireEvent.click(screen.getByLabelText("Sort by Registered"));
+    fireEvent.click(screen.getByLabelText("Sort by Registered"));
+    expect(nameCells()).toEqual(["Charliec", "Bravob", "Alphaa"]);
+  });
+
+  it("only shows a deactivate button for active anchors when onDeregister is passed", () => {
+    render(
+      <AnchorTable
+        anchors={[anchor({ id: "x", active: true }), anchor({ id: "y", active: false })]}
+        onDeregister={() => {}}
+      />,
+    );
+    expect(screen.getAllByText("Deactivate")).toHaveLength(1);
+  });
+});
