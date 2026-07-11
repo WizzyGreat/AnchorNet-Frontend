@@ -14,6 +14,7 @@ import { Card } from "./Card";
 import { TableSkeleton } from "./TableSkeleton";
 import { AnchorForm } from "./AnchorForm";
 import { AnchorTable } from "./AnchorTable";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 type StatusFilter = "all" | "active" | "inactive";
 
@@ -40,6 +41,9 @@ export function AnchorsPanel() {
   const [pending, setPending] = useState(false);
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [query, setQuery] = useState("");
+  const [pendingDeregisterId, setPendingDeregisterId] = useState<
+    string | null
+  >(null);
   const filteredAnchors =
     state.status === "ready"
       ? filterAnchors(state.data, filter).filter((anchor) =>
@@ -117,12 +121,24 @@ export function AnchorsPanel() {
             ) : (
               <AnchorTable
                 anchors={filteredAnchors}
-                onDeregister={deregister}
+                onDeregister={setPendingDeregisterId}
               />
             )}
           </>
         )}
       </Card>
+      <ConfirmDialog
+        open={pendingDeregisterId !== null}
+        title="Deactivate anchor"
+        message={`Deactivate anchor "${pendingDeregisterId}"? It will stop receiving new settlements.`}
+        confirmLabel="Deactivate"
+        onCancel={() => setPendingDeregisterId(null)}
+        onConfirm={() => {
+          const id = pendingDeregisterId;
+          setPendingDeregisterId(null);
+          if (id) deregister(id);
+        }}
+      />
     </div>
   );
 }

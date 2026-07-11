@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/useToast";
 import { formatDate } from "@/lib/format";
 import { Card } from "./Card";
 import { Spinner } from "./Spinner";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 /** Full-record view of a single anchor, with a deactivate action. */
 export function AnchorDetail({ id }: { id: string }) {
@@ -18,6 +19,7 @@ export function AnchorDetail({ id }: { id: string }) {
   const { state, reload } = useAsync(load);
   const { notify } = useToast();
   const [pending, setPending] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   async function deactivate() {
     setPending(true);
@@ -71,7 +73,7 @@ export function AnchorDetail({ id }: { id: string }) {
             </dl>
             {state.data.active ? (
               <button
-                onClick={deactivate}
+                onClick={() => setConfirmOpen(true)}
                 disabled={pending}
                 className="rounded-lg bg-zinc-800 px-3 py-1.5 text-sm text-red-400 hover:text-red-300 disabled:opacity-50"
               >
@@ -81,6 +83,17 @@ export function AnchorDetail({ id }: { id: string }) {
           </div>
         )}
       </Card>
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Deactivate anchor"
+        message={`Deactivate anchor "${id}"? It will stop receiving new settlements.`}
+        confirmLabel="Deactivate"
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          deactivate();
+        }}
+      />
     </div>
   );
 }
