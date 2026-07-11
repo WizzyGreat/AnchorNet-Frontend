@@ -13,6 +13,16 @@ export async function fetchAnchors(signal?: AbortSignal): Promise<Anchor[]> {
   return body.anchors;
 }
 
+/** Fetches a single anchor by id. */
+export async function fetchAnchor(
+  id: string,
+  signal?: AbortSignal,
+): Promise<Anchor> {
+  return apiRequest<Anchor>(`/api/v1/anchors/${encodeURIComponent(id)}`, {
+    signal,
+  });
+}
+
 /** Registers a new anchor. */
 export async function registerAnchor(input: {
   id: string;

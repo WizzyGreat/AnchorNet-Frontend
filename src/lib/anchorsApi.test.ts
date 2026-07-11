@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { fetchAnchors, registerAnchor, deregisterAnchor } from "./anchorsApi";
+import {
+  fetchAnchors,
+  fetchAnchor,
+  registerAnchor,
+  deregisterAnchor,
+} from "./anchorsApi";
 import { ApiRequestError } from "./api";
 
 function mockFetch(status: number, body: unknown) {
@@ -29,6 +34,31 @@ describe("anchorsApi", () => {
     const anchors = await fetchAnchors();
     expect(anchors).toHaveLength(1);
     expect(anchors[0].id).toBe("a");
+  });
+
+  it("fetches a single anchor by id", async () => {
+    const fn = mockFetch(200, {
+      id: "a",
+      name: "A",
+      registeredAt: "",
+      active: true,
+    });
+    vi.stubGlobal("fetch", fn);
+
+    const anchor = await fetchAnchor("a");
+    expect(anchor.id).toBe("a");
+    expect(fn.mock.calls[0][0]).toContain("/api/v1/anchors/a");
+  });
+
+  it("surfaces a not-found error for an unknown anchor id", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetch(404, { error: { code: "NOT_FOUND", message: "no anchor" } }),
+    );
+
+    await expect(fetchAnchor("missing")).rejects.toBeInstanceOf(
+      ApiRequestError,
+    );
   });
 
   it("registers an anchor", async () => {
