@@ -7,6 +7,7 @@ import {
   deregisterAnchor,
 } from "@/lib/anchorsApi";
 import { Anchor } from "@/lib/types";
+import { matchesQuery } from "@/lib/search";
 import { useAsync } from "@/hooks/useAsync";
 import { useToast } from "@/hooks/useToast";
 import { Card } from "./Card";
@@ -38,8 +39,13 @@ export function AnchorsPanel() {
   const { notify } = useToast();
   const [pending, setPending] = useState(false);
   const [filter, setFilter] = useState<StatusFilter>("all");
+  const [query, setQuery] = useState("");
   const filteredAnchors =
-    state.status === "ready" ? filterAnchors(state.data, filter) : [];
+    state.status === "ready"
+      ? filterAnchors(state.data, filter).filter((anchor) =>
+          matchesQuery([anchor.id, anchor.name], query),
+        )
+      : [];
 
   async function register(input: { id: string; name?: string }) {
     setPending(true);
@@ -80,7 +86,7 @@ export function AnchorsPanel() {
         ) : (
           <>
             {state.data.length > 0 ? (
-              <div className="mb-3 flex items-center gap-2">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
                 {FILTERS.map((f) => (
                   <button
                     key={f.value}
@@ -95,6 +101,13 @@ export function AnchorsPanel() {
                     {f.label}
                   </button>
                 ))}
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search anchors…"
+                  aria-label="Search anchors"
+                  className="ml-auto w-full max-w-48 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs text-zinc-100 outline-none focus:border-zinc-600"
+                />
               </div>
             ) : null}
             {filteredAnchors.length === 0 && state.data.length > 0 ? (
