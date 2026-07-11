@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   fetchSettlements,
+  fetchSettlement,
   openSettlement,
   executeSettlement,
   cancelSettlement,
 } from "./settlementsApi";
+import { ApiRequestError } from "./api";
 
 function mockFetch(status: number, body: unknown) {
   const fn = vi.fn().mockResolvedValue({
@@ -86,6 +88,24 @@ describe("settlementsApi", () => {
     await fetchSettlements();
     const url = fn.mock.calls[0][0] as string;
     expect(url.endsWith("/api/v1/settlements")).toBe(true);
+  });
+
+  it("fetches a single settlement by id", async () => {
+    const fn = mockFetch(200, settlement());
+    vi.stubGlobal("fetch", fn);
+
+    const result = await fetchSettlement(1);
+    expect(result.id).toBe(1);
+    expect(fn.mock.calls[0][0]).toContain("/api/v1/settlements/1");
+  });
+
+  it("surfaces a not-found error for an unknown settlement id", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetch(404, { error: { code: "NOT_FOUND", message: "no settlement" } }),
+    );
+
+    await expect(fetchSettlement(999)).rejects.toBeInstanceOf(ApiRequestError);
   });
 
   it("opens a settlement", async () => {
