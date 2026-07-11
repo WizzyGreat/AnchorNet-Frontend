@@ -1,7 +1,17 @@
+"use client";
+
 import Link from "next/link";
 import { Anchor } from "@/lib/types";
 import { formatDate } from "@/lib/format";
+import { useSortableData, SortState } from "@/hooks/useSortableData";
 import { EmptyState } from "./EmptyState";
+
+type SortKey = "name" | "registeredAt" | "active";
+
+function getSortValue(anchor: Anchor, key: SortKey): string | number {
+  if (key === "active") return anchor.active ? 1 : 0;
+  return anchor[key];
+}
 
 /** Renders registered anchors with an optional deregister action. */
 export function AnchorTable({
@@ -11,6 +21,11 @@ export function AnchorTable({
   anchors: Anchor[];
   onDeregister?: (id: string) => void;
 }) {
+  const { sorted, sort, requestSort } = useSortableData<Anchor, SortKey>(
+    anchors,
+    getSortValue,
+  );
+
   if (anchors.length === 0) {
     return <EmptyState message="No anchors registered yet." />;
   }
@@ -19,14 +34,29 @@ export function AnchorTable({
     <table className="w-full text-left text-sm">
       <thead>
         <tr className="border-b border-zinc-800 text-zinc-400">
-          <th className="py-2 font-medium">Anchor</th>
-          <th className="py-2 font-medium">Registered</th>
-          <th className="py-2 font-medium">Status</th>
+          <SortableHeader
+            label="Anchor"
+            sortKey="name"
+            sort={sort}
+            onSort={requestSort}
+          />
+          <SortableHeader
+            label="Registered"
+            sortKey="registeredAt"
+            sort={sort}
+            onSort={requestSort}
+          />
+          <SortableHeader
+            label="Status"
+            sortKey="active"
+            sort={sort}
+            onSort={requestSort}
+          />
           {onDeregister ? <th className="py-2" /> : null}
         </tr>
       </thead>
       <tbody>
-        {anchors.map((anchor) => (
+        {sorted.map((anchor) => (
           <tr key={anchor.id} className="border-b border-zinc-900">
             <td className="py-2">
               <Link
@@ -61,5 +91,34 @@ export function AnchorTable({
         ))}
       </tbody>
     </table>
+  );
+}
+
+function SortableHeader({
+  label,
+  sortKey,
+  sort,
+  onSort,
+}: {
+  label: string;
+  sortKey: SortKey;
+  sort: SortState<SortKey> | null;
+  onSort: (key: SortKey) => void;
+}) {
+  const active = sort?.key === sortKey;
+  const indicator = active ? (sort?.direction === "asc" ? "▲" : "▼") : "";
+
+  return (
+    <th className="py-2 font-medium">
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        aria-label={`Sort by ${label}`}
+        className="flex items-center gap-1 hover:text-zinc-200"
+      >
+        {label}
+        <span className="w-2 text-[10px] text-zinc-500">{indicator}</span>
+      </button>
+    </th>
   );
 }
