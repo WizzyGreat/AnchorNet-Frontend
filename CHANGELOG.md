@@ -2,6 +2,25 @@
 
 All notable changes to the AnchorNet web app are documented here.
 
+## [0.5.0]
+
+### Added
+
+- **Sorting:** the anchors table (Anchor / Registered / Status) and the pools
+  table (Asset / Total liquidity / Anchors) are now sortable, matching the
+  settlements table.
+- **Search:** a client-side search box on the anchors panel (matches id/name)
+  and the settlements panel (matches id/anchor/asset), layered on top of the
+  existing status filter tabs and sortable columns.
+- **Confirmation dialogs:** deactivating an anchor or cancelling a settlement
+  now opens a `ConfirmDialog` instead of firing immediately, on both the list
+  panels and their detail pages.
+- **Wallet:** the mock wallet connection is persisted to `localStorage`, so a
+  connected account survives a page refresh.
+- **Tests:** component coverage for `AnchorTable`/`PoolTable` sorting,
+  `ConfirmDialog`, `AnchorForm`/`SettlementForm` validation, the
+  `matchesQuery` search helper, and wallet session persistence.
+
 ## [0.4.0]
 
 ### Added
