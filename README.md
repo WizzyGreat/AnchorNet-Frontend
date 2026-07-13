@@ -87,16 +87,22 @@ A mock **wallet connect** lives in the header (a stand-in for a real Stellar
 wallet integration); the connected account is persisted to `localStorage` so
 it survives a page refresh.
 
+Every search box (dashboard pools, anchors, settlements) can be focused from
+anywhere on the page by pressing **`/`**, unless focus is already inside
+another text field.
+
 ### Structure
 
 ```
 src/app/        routes (landing, dashboard, anchors + [id], settlements + [id]),
-                 each list/detail route with its own loading.tsx and error.tsx
+                 each list/detail route with its own loading.tsx and error.tsx,
+                 plus a root-level not-found.tsx
 src/components/  UI (Card, tables, forms with inline validation, skeleton
                  loaders, panels, badges, toasts, confirm dialog, wallet,
                  detail views, distribution bar, route error fallback,
-                 header/footer)
-src/hooks/       useAsync, useInterval, useWallet, useToast, useSortableData
+                 copy button, header/footer)
+src/hooks/       useAsync, useInterval, useWallet, useToast, useSortableData,
+                 useFocusShortcut
 src/lib/         types, formatting, search matching, toast stack helpers,
                  wallet session persistence, API clients (liquidity,
                  anchors, settlements, metrics)
