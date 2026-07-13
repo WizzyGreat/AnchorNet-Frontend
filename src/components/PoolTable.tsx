@@ -77,9 +77,14 @@ function SortableHeader({
 }) {
   const active = sort?.key === sortKey;
   const indicator = active ? (sort?.direction === "asc" ? "▲" : "▼") : "";
+  const ariaSort = !active
+    ? "none"
+    : sort?.direction === "asc"
+      ? "ascending"
+      : "descending";
 
   return (
-    <th className="py-2 font-medium">
+    <th className="py-2 font-medium" aria-sort={ariaSort}>
       <button
         type="button"
         onClick={() => onSort(sortKey)}
