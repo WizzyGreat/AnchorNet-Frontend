@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   fetchSettlements,
   openSettlement,
@@ -11,6 +11,7 @@ import { Settlement, Pagination } from "@/lib/types";
 import { pluralize } from "@/lib/format";
 import { matchesQuery } from "@/lib/search";
 import { useToast } from "@/hooks/useToast";
+import { useFocusShortcut } from "@/hooks/useFocusShortcut";
 import { Card } from "./Card";
 import { TableSkeleton } from "./TableSkeleton";
 import { SettlementForm } from "./SettlementForm";
@@ -36,6 +37,8 @@ export function SettlementsPanel() {
   const [query, setQuery] = useState("");
   const [pendingCancelId, setPendingCancelId] = useState<number | null>(null);
   const { notify } = useToast();
+  const searchRef = useRef<HTMLInputElement>(null);
+  useFocusShortcut("/", searchRef);
 
   const reload = useCallback(() => {
     setState({ status: "loading" });
@@ -154,9 +157,10 @@ export function SettlementsPanel() {
                   </select>
                 </label>
                 <input
+                  ref={searchRef}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search settlements…"
+                  placeholder="Search settlements… (/)"
                   aria-label="Search settlements"
                   className="w-full max-w-48 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs text-zinc-100 outline-none focus:border-zinc-600"
                 />
