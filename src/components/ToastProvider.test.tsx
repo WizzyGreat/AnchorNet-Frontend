@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { describe, it, expect } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { ToastProvider } from "./ToastProvider";
 import { useToast } from "@/hooks/useToast";
 
@@ -15,6 +15,43 @@ function Trigger({ message = "Saved successfully" }: { message?: string }) {
 }
 
 describe("ToastProvider", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("auto-dismisses a toast after 5 seconds", () => {
+    render(
+      <ToastProvider>
+        <Trigger />
+      </ToastProvider>,
+    );
+    expect(screen.getByText("Saved successfully")).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    expect(screen.queryByText("Saved successfully")).not.toBeInTheDocument();
+  });
+
+  it("does not auto-dismiss before the timeout elapses", () => {
+    render(
+      <ToastProvider>
+        <Trigger />
+      </ToastProvider>,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(4999);
+    });
+
+    expect(screen.getByText("Saved successfully")).toBeInTheDocument();
+  });
+
   it("renders a queued toast notification", () => {
     render(
       <ToastProvider>
