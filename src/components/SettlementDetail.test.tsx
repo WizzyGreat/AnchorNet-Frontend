@@ -53,6 +53,20 @@ describe("SettlementDetail", () => {
     expect(screen.getByText("USDC")).toBeInTheDocument();
   });
 
+  it("copies the anchor address to the clipboard", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    vi.mocked(fetchSettlement).mockResolvedValue(pending);
+
+    renderDetail();
+    await screen.findByText("Settlement #1");
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("anchorA"));
+    vi.unstubAllGlobals();
+  });
+
   it("shows an error message when the settlement fails to load", async () => {
     vi.mocked(fetchSettlement).mockRejectedValue(new Error("not found"));
 
