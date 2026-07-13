@@ -42,6 +42,25 @@ describe("AnchorDetail", () => {
     expect(screen.getByText("Active")).toBeInTheDocument();
   });
 
+  it("copies the anchor id to the clipboard", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    vi.mocked(fetchAnchor).mockResolvedValue({
+      id: "anchorA",
+      name: "Anchor A",
+      registeredAt: "",
+      active: true,
+    });
+
+    renderDetail();
+    await screen.findByText("Anchor A");
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("anchorA"));
+    vi.unstubAllGlobals();
+  });
+
   it("shows an error message when the anchor fails to load", async () => {
     vi.mocked(fetchAnchor).mockRejectedValue(new Error("not found"));
 
