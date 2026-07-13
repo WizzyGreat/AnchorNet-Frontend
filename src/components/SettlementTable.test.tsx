@@ -45,4 +45,16 @@ describe("SettlementTable sorting", () => {
     fireEvent.click(screen.getByLabelText("Sort by Amount"));
     expect(amountCells()).toEqual(["300", "200", "100"]);
   });
+
+  it("exposes the current sort direction via aria-sort", () => {
+    render(<SettlementTable settlements={settlements} />);
+    const header = screen.getByLabelText("Sort by Amount").closest("th");
+    expect(header).toHaveAttribute("aria-sort", "none");
+
+    fireEvent.click(screen.getByLabelText("Sort by Amount"));
+    expect(header).toHaveAttribute("aria-sort", "ascending");
+
+    fireEvent.click(screen.getByLabelText("Sort by Amount"));
+    expect(header).toHaveAttribute("aria-sort", "descending");
+  });
 });
