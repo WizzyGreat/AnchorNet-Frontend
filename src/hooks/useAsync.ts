@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type AsyncState<T> =
   | { status: "loading" }
@@ -19,10 +19,12 @@ export function useAsync<T>(
 ): {
   state: AsyncState<T>;
   reload: () => void;
-  refresh: () => void;
+  /** Re-fetches; resolves when the triggered fetch settles (never rejects). */
+  refresh: () => Promise<void>;
 } {
   const [state, setState] = useState<AsyncState<T>>(initialState);
   const [nonce, setNonce] = useState(0);
+  const refreshWaiters = useRef<Array<() => void>>([]);
 
   // `reload` re-fetches and shows a loading state; `refresh` re-fetches
   // silently, keeping the current data visible until the new data arrives.
@@ -30,7 +32,14 @@ export function useAsync<T>(
     setState({ status: "loading" });
     setNonce((n) => n + 1);
   }, []);
-  const refresh = useCallback(() => setNonce((n) => n + 1), []);
+  const refresh = useCallback(
+    () =>
+      new Promise<void>((resolve) => {
+        refreshWaiters.current.push(resolve);
+        setNonce((n) => n + 1);
+      }),
+    [],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -42,6 +51,13 @@ export function useAsync<T>(
           status: "error",
           message: err instanceof Error ? err.message : "Request failed",
         });
+      })
+      .finally(() => {
+        // An aborted fetch was superseded by a newer one (or unmounted); its
+        // waiters stay queued until the fetch that actually settles resolves
+        // them all.
+        if (controller.signal.aborted) return;
+        refreshWaiters.current.splice(0).forEach((resolve) => resolve());
       });
     return () => controller.abort();
     // `load` is intentionally excluded; re-runs are driven by `reload`/`nonce`.
