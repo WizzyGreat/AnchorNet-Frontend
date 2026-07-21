@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef } from "react";
 import { fetchPools } from "@/lib/api";
 import { formatAmount } from "@/lib/format";
 import { matchesQuery } from "@/lib/search";
 import { useAsync } from "@/hooks/useAsync";
 import { useFocusShortcut } from "@/hooks/useFocusShortcut";
+import { useQueryState } from "@/hooks/useQueryState";
 import { Card } from "./Card";
 import { StatCard } from "./StatCard";
 import { PoolTable } from "./PoolTable";
@@ -17,7 +18,7 @@ import { EmptyState } from "./EmptyState";
 export function PoolsPanel() {
   const load = useCallback((signal: AbortSignal) => fetchPools(signal), []);
   const { state, reload } = useAsync(load);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useQueryState("q", "");
   const searchRef = useRef<HTMLInputElement>(null);
   useFocusShortcut("/", searchRef);
 
