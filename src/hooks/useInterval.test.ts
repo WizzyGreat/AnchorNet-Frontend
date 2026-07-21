@@ -47,7 +47,7 @@ describe("useInterval", () => {
     const callback = vi.fn();
     const { rerender } = renderHook(
       ({ delay }) => useInterval(callback, delay),
-      { initialProps: { delay: 1000 } },
+      { initialProps: { delay: 1000 as number | null } },
     );
 
     vi.advanceTimersByTime(2500);
@@ -62,7 +62,7 @@ describe("useInterval", () => {
     const callback = vi.fn();
     const { rerender } = renderHook(
       ({ delay }) => useInterval(callback, delay),
-      { initialProps: { delay: null } },
+      { initialProps: { delay: null as number | null } },
     );
 
     vi.advanceTimersByTime(5000);

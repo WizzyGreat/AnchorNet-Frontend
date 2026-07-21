@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { ToastProvider } from "./ToastProvider";
 import { useToast } from "@/hooks/useToast";
-import { MAX_TOASTS } from "@/lib/toast";
+import { MAX_TOASTS, type Toast } from "@/lib/toast";
 
 /** Fires a single notification on mount via the real toast context. */
 function Trigger({
@@ -287,7 +287,7 @@ describe("ToastProvider", () => {
     });
     expect(toast).not.toBeInTheDocument();
   });
-});
+
   it("does not throw or warn when notify is called after provider unmounts", () => {
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     let capturedNotify: ((kind: Toast["kind"], message: string) => void) | undefined;
