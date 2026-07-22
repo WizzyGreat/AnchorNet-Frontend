@@ -8,6 +8,7 @@ const inputClass =
 const invalidInputClass =
   "w-full rounded-lg border border-red-500/60 bg-zinc-950 px-3 py-2 text-sm " +
   "text-zinc-100 outline-none focus:border-red-500";
+const ASSET_DATALIST_ID = "settlement-form-asset-list";
 
 interface FormErrors {
   anchor?: string;
@@ -68,6 +69,8 @@ export function SettlementForm({
   }, [serverError]);
 
   const anchorRef = useRef<HTMLInputElement>(null);
+  const assetOptions = Object.keys(availableLiquidity ?? {});
+  const assetListId = assetOptions.length > 0 ? ASSET_DATALIST_ID : undefined;
   const anchorErrorId = "settlement-anchor-error";
   const assetErrorId = "settlement-asset-error";
   const amountErrorId = "settlement-amount-error";
@@ -128,10 +131,18 @@ export function SettlementForm({
             if (errors.asset) setErrors((prev) => ({ ...prev, asset: undefined }));
           }}
           placeholder="Asset"
+          list={assetListId}
           aria-invalid={Boolean(errors.asset)}
           aria-describedby={errors.asset ? assetErrorId : undefined}
           className={errors.asset ? invalidInputClass : inputClass}
         />
+        {assetOptions.length > 0 ? (
+          <datalist id={ASSET_DATALIST_ID}>
+            {assetOptions.map((assetOption) => (
+              <option key={assetOption} value={assetOption} />
+            ))}
+          </datalist>
+        ) : null}
         {errors.asset ? (
           <p id={assetErrorId} className="mt-1 text-xs text-red-400">
             {errors.asset}
