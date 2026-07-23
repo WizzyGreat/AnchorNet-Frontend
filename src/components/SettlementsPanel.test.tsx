@@ -30,6 +30,19 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/settlements",
 }));
 
+// ---------------------------------------------------------------------------
+// Mock next/navigation so the panel can run in jsdom.
+// ---------------------------------------------------------------------------
+
+const mockReplace = vi.fn();
+let mockSearchParamsString = "";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: mockReplace }),
+  useSearchParams: () => new URLSearchParams(mockSearchParamsString),
+  usePathname: () => "/settlements",
+}));
+
 vi.mock("@/lib/settlementsApi", () => ({
   fetchSettlements: vi.fn(),
   openSettlement: vi.fn(),
@@ -45,7 +58,6 @@ vi.mock("@/lib/api", () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   mockSearchParamsString = "";
-  vi.mocked(fetchPools).mockResolvedValue([]);
 });
 
 function page(

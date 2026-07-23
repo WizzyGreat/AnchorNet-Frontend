@@ -10,15 +10,36 @@ import { Pool, Quote, QuoteRequest, ApiErrorBody } from "./types";
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
+// ── Shared query-string builder ─────────────────────────────────────────────
+
 /**
- * Returns true when `err` is an AbortError — the rejection thrown by `fetch`
- * (and other Web APIs) when an `AbortSignal` fires.  Use this to distinguish
- * a deliberate cancellation from a genuine network/server failure so callers
- * never surface a user-facing error toast for a request the app itself
- * cancelled on purpose.
+ * Build a URL query string from an object of parameters, skipping keys whose
+ * values are `undefined`.
+ *
+ * Returns an empty string when no parameters are provided, or a string
+ * starting with `?` otherwise.
+ *
+ * @example
+ * buildQueryParams({ anchor: "a", page: 1, pageSize: undefined })
+ * // => "?anchor=a&page=1"
+ *
+ * buildQueryParams({})
+ * // => ""
  */
-export function isAbortError(err: unknown): boolean {
-  return err instanceof DOMException && err.name === "AbortError";
+export function buildQueryParams(
+  params: Record<string, string | number | undefined>,
+): string {
+  const entries = Object.entries(params).filter(
+    (entry): entry is [string, string | number] => entry[1] !== undefined,
+  );
+
+  if (entries.length === 0) return "";
+
+  const usp = new URLSearchParams();
+  for (const [key, value] of entries) {
+    usp.set(key, String(value));
+  }
+  return `?${usp.toString()}`;
 }
 
 /** Error thrown when the API responds with a non-2xx status. */

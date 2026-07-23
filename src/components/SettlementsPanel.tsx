@@ -50,7 +50,6 @@ export function SettlementsPanel() {
   // Empty on initial load so nothing is announced until the user paginates.
   const [loadMoreAnnouncement, setLoadMoreAnnouncement] = useState("");
   const [pending, setPending] = useState(false);
-  const [exporting, setExporting] = useState(false);
   const [pendingCancelId, setPendingCancelId] = useState<number | null>(null);
   const [pools, setPools] = useState<Pool[]>([]);
   const { notify } = useToast();
@@ -125,7 +124,6 @@ export function SettlementsPanel() {
 
   /** Switches the page size and reloads from page 1. */
   function changePageSize(size: number) {
-    setState({ status: "loading" });
     setRawPageSize(String(size));
   }
 
