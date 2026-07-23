@@ -90,6 +90,48 @@ describe("MetricsBar", () => {
     expect(button.querySelector(".animate-spin")).toBeNull();
   });
 
+  it("does not update state after unmounting mid-refresh", async () => {
+    vi.useFakeTimers();
+    const first = deferred<Metrics>();
+    vi.mocked(fetchMetrics).mockReturnValueOnce(first.promise);
+
+    const { unmount } = render(<MetricsBar />);
+
+    // Let the initial fetch resolve.
+    await act(async () => first.resolve(metrics));
+    expect(fetchMetrics).toHaveBeenCalledTimes(1);
+
+    // Spy on console.error to catch React's "state update on unmounted
+    // component" warning.
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    // Advance time to trigger the interval-driven refresh.
+    const second = deferred<Metrics>();
+    vi.mocked(fetchMetrics).mockReturnValueOnce(second.promise);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(15_000);
+    });
+    expect(fetchMetrics).toHaveBeenCalledTimes(2);
+
+    // Unmount before the second fetch resolves.
+    unmount();
+
+    // Now resolve the in-flight fetch — this should NOT call setState.
+    await act(async () => second.resolve({ ...metrics, activeAnchors: 4 }));
+
+    // Assert no "state update on an unmounted component" warning.
+    expect(consoleSpy).not.toHaveBeenCalledWith(
+      expect.stringMatching(
+        /can't perform a react state update on an unmounted component/i,
+      ),
+      expect.anything(),
+      expect.anything(),
+    );
+
+    consoleSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
   it("keeps the auto-refresh interval on schedule after a manual refresh", async () => {
     vi.useFakeTimers();
     vi.mocked(fetchMetrics).mockResolvedValue(metrics);

@@ -43,9 +43,12 @@ export function useAsync<T>(
   );
 
   useEffect(() => {
+    let mounted = true;
     const controller = new AbortController();
     load(controller.signal)
-      .then((data) => setState({ status: "ready", data }))
+      .then((data) => {
+        if (mounted) setState({ status: "ready", data });
+      })
       .catch((err: unknown) => {
         // Swallow deliberate cancellations: either the controller we own was
         // aborted (unmount / reload) or the load function itself threw an
@@ -60,19 +63,24 @@ export function useAsync<T>(
           (err instanceof Error && err.name === "AbortError")
         )
           return;
-        setState({
-          status: "error",
-          message: err instanceof Error ? err.message : "Request failed",
-        });
+        if (mounted) {
+          setState({
+            status: "error",
+            message: err instanceof Error ? err.message : "Request failed",
+          });
+        }
       })
       .finally(() => {
         // An aborted fetch was superseded by a newer one (or unmounted); its
         // waiters stay queued until the fetch that actually settles resolves
         // them all.
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted || !mounted) return;
         refreshWaiters.current.splice(0).forEach((resolve) => resolve());
       });
-    return () => controller.abort();
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
     // `load` is intentionally excluded; re-runs are driven by `reload`/`nonce`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nonce]);
