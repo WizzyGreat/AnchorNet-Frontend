@@ -20,7 +20,7 @@ describe('MetricsBar', () => {
   it('shows a stable four-card skeleton grid before metrics resolve', () => {
     (useAsync as any).mockReturnValue({
       state: { status: 'loading' },
-      reload: vi.fn(),
+      refresh: vi.fn(),
     });
     render(<MetricsBar />);
     expect(screen.getByText('Active anchors')).toBeInTheDocument();
@@ -33,7 +33,7 @@ describe('MetricsBar', () => {
     const mockReload = vi.fn();
     (useAsync as any).mockReturnValue({
       state: { status: 'ready', data: { activeAnchors: 50, anchors: 100, pools: 10, totalLiquidity: 500000, settlements: 1000 } },
-      reload: mockReload,
+      refresh: mockReload,
     });
     render(<MetricsBar />);
     act(() => {
@@ -46,7 +46,7 @@ describe('MetricsBar', () => {
     const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     (useAsync as any).mockReturnValue({
       state: { status: 'loading' },
-      reload: vi.fn(),
+      refresh: vi.fn(),
     });
     const { unmount } = render(<MetricsBar />);
     act(() => {
@@ -63,7 +63,7 @@ describe('MetricsBar', () => {
     const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     (useAsync as any).mockReturnValue({
       state: { status: 'loading' },
-      reload: vi.fn(),
+      refresh: vi.fn(),
     });
     const { unmount } = render(<MetricsBar />);
     act(() => {

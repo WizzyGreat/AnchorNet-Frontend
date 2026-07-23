@@ -22,10 +22,12 @@ export function SettlementTable({
   settlements,
   onExecute,
   onCancel,
+  pendingIds,
 }: {
   settlements: Settlement[];
   onExecute?: (id: number) => void;
   onCancel?: (id: number) => void;
+  pendingIds?: Set<number>;
 }) {
   const { sorted, sort, requestSort } = useSortableData<Settlement, SortKey>(
     settlements,
@@ -76,46 +78,51 @@ export function SettlementTable({
           </tr>
         </thead>
         <tbody>
-          {sorted.map((s) => (
-            <tr key={s.id} className="border-b border-zinc-900">
-              <td className="py-2 text-zinc-500">
-                <Link href={`/settlements/${s.id}`} className="block hover:underline">
-                  {s.id}
-                </Link>
-              </td>
-              <td className="py-2 font-mono text-xs text-zinc-300">{s.anchor}</td>
-              <td className="py-2 font-mono text-zinc-100">{s.asset}</td>
-              <td className="py-2 text-zinc-200">{formatAmount(s.amount)}</td>
-              <td className="py-2 text-zinc-400">{formatAmount(s.fee)}</td>
-              <td className="py-2">
-                <StatusBadge status={s.status} />
-              </td>
-              {actionable ? (
-                <td className="py-2 text-right">
-                  {s.status === "pending" ? (
-                    <span className="flex justify-end gap-2">
-                      {onExecute ? (
-                        <button
-                          onClick={() => onExecute(s.id)}
-                          className="rounded-md px-2 py-1 text-xs text-emerald-400 hover:text-emerald-300"
-                        >
-                          Execute
-                        </button>
-                      ) : null}
-                      {onCancel ? (
-                        <button
-                          onClick={() => onCancel(s.id)}
-                          className="rounded-md px-2 py-1 text-xs text-red-400 hover:text-red-300"
-                        >
-                          Cancel
-                        </button>
-                      ) : null}
-                    </span>
-                  ) : null}
+          {sorted.map((s) => {
+            const isPending = pendingIds?.has(s.id) ?? false;
+            return (
+              <tr key={s.id} className="border-b border-zinc-900">
+                <td className="py-2 text-zinc-500">
+                  <Link href={`/settlements/${s.id}`} className="block hover:underline">
+                    {s.id}
+                  </Link>
                 </td>
-              ) : null}
-            </tr>
-          ))}
+                <td className="py-2 font-mono text-xs text-zinc-300">{s.anchor}</td>
+                <td className="py-2 font-mono text-zinc-100">{s.asset}</td>
+                <td className="py-2 text-zinc-200">{formatAmount(s.amount)}</td>
+                <td className="py-2 text-zinc-400">{formatAmount(s.fee)}</td>
+                <td className="py-2">
+                  <StatusBadge status={s.status} />
+                </td>
+                {actionable ? (
+                  <td className="py-2 text-right">
+                    {s.status === "pending" ? (
+                      <span className="flex justify-end gap-2">
+                        {onExecute ? (
+                          <button
+                            onClick={() => onExecute(s.id)}
+                            disabled={isPending}
+                            className="rounded-md px-2 py-1 text-xs text-emerald-400 hover:text-emerald-300 disabled:opacity-50"
+                          >
+                            Execute
+                          </button>
+                        ) : null}
+                        {onCancel ? (
+                          <button
+                            onClick={() => onCancel(s.id)}
+                            disabled={isPending}
+                            className="rounded-md px-2 py-1 text-xs text-red-400 hover:text-red-300 disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                        ) : null}
+                      </span>
+                    ) : null}
+                  </td>
+                ) : null}
+              </tr>
+            );
+          })}
         </tbody>
         <tfoot>
           <tr className="border-t border-zinc-800 font-medium">
@@ -132,46 +139,51 @@ export function SettlementTable({
 
       {/* Card view for small screens */}
       <div className="block sm:hidden space-y-4">
-        {sorted.map((s) => (
-          <div key={s.id} data-testid="settlement-card" className="border border-zinc-800 rounded p-4 bg-zinc-900">
-            <div className="flex justify-between items-center mb-2">
-              <Link href={`/settlements/${s.id}`} className="text-zinc-500 hover:underline font-medium">
-                Settlement #{s.id}
-              </Link>
-              <StatusBadge status={s.status} />
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="font-medium text-zinc-400">Anchor</div>
-              <div className="font-mono text-zinc-300">{s.anchor}</div>
-              <div className="font-medium text-zinc-400">Asset</div>
-              <div className="font-mono text-zinc-100">{s.asset}</div>
-              <div className="font-medium text-zinc-400">Amount</div>
-              <div className="text-zinc-200">{formatAmount(s.amount)}</div>
-              <div className="font-medium text-zinc-400">Fee</div>
-              <div className="text-zinc-400">{formatAmount(s.fee)}</div>
-            </div>
-            {actionable && s.status === "pending" && (
-              <div className="mt-2 flex justify-end gap-2">
-                {onExecute && (
-                  <button
-                    onClick={() => onExecute(s.id)}
-                    className="rounded-md px-2 py-1 text-xs text-emerald-400 hover:text-emerald-300"
-                  >
-                    Execute
-                  </button>
-                )}
-                {onCancel && (
-                  <button
-                    onClick={() => onCancel(s.id)}
-                    className="rounded-md px-2 py-1 text-xs text-red-400 hover:text-red-300"
-                  >
-                    Cancel
-                  </button>
-                )}
+        {sorted.map((s) => {
+          const isPending = pendingIds?.has(s.id) ?? false;
+          return (
+            <div key={s.id} data-testid="settlement-card" className="border border-zinc-800 rounded p-4 bg-zinc-900">
+              <div className="flex justify-between items-center mb-2">
+                <Link href={`/settlements/${s.id}`} className="text-zinc-500 hover:underline font-medium">
+                  Settlement #{s.id}
+                </Link>
+                <StatusBadge status={s.status} />
               </div>
-            )}
-          </div>
-        ))}
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="font-medium text-zinc-400">Anchor</div>
+                <div className="font-mono text-zinc-300">{s.anchor}</div>
+                <div className="font-medium text-zinc-400">Asset</div>
+                <div className="font-mono text-zinc-100">{s.asset}</div>
+                <div className="font-medium text-zinc-400">Amount</div>
+                <div className="text-zinc-200">{formatAmount(s.amount)}</div>
+                <div className="font-medium text-zinc-400">Fee</div>
+                <div className="text-zinc-400">{formatAmount(s.fee)}</div>
+              </div>
+              {actionable && s.status === "pending" && (
+                <div className="mt-2 flex justify-end gap-2">
+                  {onExecute && (
+                    <button
+                      onClick={() => onExecute(s.id)}
+                      disabled={isPending}
+                      className="rounded-md px-2 py-1 text-xs text-emerald-400 hover:text-emerald-300 disabled:opacity-50"
+                    >
+                      Execute
+                    </button>
+                  )}
+                  {onCancel && (
+                    <button
+                      onClick={() => onCancel(s.id)}
+                      disabled={isPending}
+                      className="rounded-md px-2 py-1 text-xs text-red-400 hover:text-red-300 disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
         {/* Totals card */}
         <div className="border border-zinc-800 rounded p-4 bg-zinc-900">
           <div className="font-medium text-zinc-400 mb-1">Total (visible rows)</div>

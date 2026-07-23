@@ -1,107 +1,89 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { isAbortError } from "@/lib/api";
 
 export type AsyncState<T> =
-    | { status: "loading" }
-    | { status: "error"; message: string; error?: unknown }
-    | { status: "ready"; data: T };
-
-interface UseAsyncOptions {
-    /** Debounce the initial load by this many milliseconds */
-    debounceMs?: number;
-}
+  | { status: "loading" }
+  | { status: "error"; message: string; error?: unknown }
+  | { status: "ready"; data: T };
 
 /**
- * Runs an abortable async loader on mount and exposes a reload trigger.
- * If options.debounceMs is provided, the initial load is debounced.
+ * Runs an abortable async loader on mount and exposes a `reload` trigger.
+ *
+ * If seeded with an already-"ready" `initialState`, the initial fetch on mount
+ * is skipped; re-running is driven by `reload` or `refresh`.
+ *
+ * The loader is expected to be behaviourally stable; re-running is driven by
+ * `reload`, which also surfaces a loading state.
  */
 export function useAsync<T>(
-    load: (signal: AbortSignal) => Promise<T>,
-    initialState: AsyncState<T> = { status: "loading" },
-    options: UseAsyncOptions = {}
+  load: (signal: AbortSignal) => Promise<T>,
+  initialState: AsyncState<T> = { status: "loading" },
 ): {
-    state: AsyncState<T>;
-    reload: () => void;
+  state: AsyncState<T>;
+  reload: () => void;
+  /** Re-fetches; resolves when the triggered fetch settles (never rejects). */
+  refresh: () => Promise<void>;
 } {
-    const { debounceMs } = options;
+  const [state, setState] = useState<AsyncState<T>>(initialState);
+  const [nonce, setNonce] = useState(0);
+  const refreshWaiters = useRef<Array<() => void>>([]);
 
-    const [state, setState] = useState<AsyncState<T>>(initialState);
-    const abortControllerRef = useRef<AbortController | null>(null);
-    const mountedRef = useRef(true);
-    const reloadRef = useRef<() => void>(() => {});
-    const refreshWaiters = useRef<Array<() => void>>([]);
+  // `reload` re-fetches and shows a loading state; `refresh` re-fetches
+  // silently, keeping the current data visible until the new data arrives.
+  const reload = useCallback(() => {
+    setState({ status: "loading" });
+    setNonce((n) => n + 1);
+  }, []);
+  const refresh = useCallback(
+    () =>
+      new Promise<void>((resolve) => {
+        refreshWaiters.current.push(resolve);
+        setNonce((n) => n + 1);
+      }),
+    [],
+  );
 
-    const execute = useCallback(
-        async (signal: AbortSignal) => {
-            try {
-                const data = await load(signal);
-                if (mountedRef.current) {
-                    setState({ status: "ready", data });
-                }
-            } catch (err) {
-                // Swallow deliberate cancellations
-                if (isAbortError(err) || (err instanceof Error && err.name === "AbortError")) {
-                    return;
-                }
-                if (mountedRef.current) {
-                    setState({
-                        status: "error",
-                        message: err instanceof Error ? err.message : "Request failed",
-                        error: err,
-                    });
-                }
-            } finally {
-                // Resolve any waiters
-                if (!signal.aborted) {
-                    refreshWaiters.current.splice(0).forEach((resolve) => resolve());
-                }
-            }
-        },
-        [load]
-    );
+  useEffect(() => {
+    if (nonce === 0 && initialState.status === "ready") {
+      return;
+    }
 
-    const reload = useCallback(() => {
-        // Cancel any in-flight request
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-        }
-        const controller = new AbortController();
-        abortControllerRef.current = controller;
-        setState({ status: "loading" });
-        execute(controller.signal);
-    }, [execute]);
+    const controller = new AbortController();
+    load(controller.signal)
+      .then((data) => setState({ status: "ready", data }))
+      .catch((err: unknown) => {
+        // Swallow deliberate cancellations: either the controller we own was
+        // aborted (unmount / reload) or the load function itself threw an
+        // AbortError (e.g. from an externally-supplied signal).  Neither case
+        // is a genuine failure, so we must never surface an error toast.
+        // Explicitly also check for plain `Error` instances with the name
+        // `AbortError` to cover racey paths where the signal's `aborted`
+        // property might still be false when the catch handler runs.
+        if (
+          controller.signal.aborted ||
+          isAbortError(err) ||
+          (err instanceof Error && err.name === "AbortError")
+        )
+          return;
+        setState({
+          status: "error",
+          message: err instanceof Error ? err.message : "Request failed",
+          error: err,
+        });
+      })
+      .finally(() => {
+        // An aborted fetch was superseded by a newer one (or unmounted); its
+        // waiters stay queued until the fetch that actually settles resolves
+        // them all.
+        if (controller.signal.aborted) return;
+        refreshWaiters.current.splice(0).forEach((resolve) => resolve());
+      });
+    return () => controller.abort();
+    // `load` is intentionally excluded; re-runs are driven by `reload`/`nonce`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nonce]);
 
-    // Keep the latest reload function in a ref so the effect below can call it
-    reloadRef.current = reload;
-
-    useEffect(() => {
-        mountedRef.current = true;
-        let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-        const startLoad = () => {
-            const controller = new AbortController();
-            abortControllerRef.current = controller;
-            execute(controller.signal);
-        };
-
-        if (debounceMs && debounceMs > 0) {
-            timeoutId = setTimeout(startLoad, debounceMs);
-        } else {
-            startLoad();
-        }
-
-        return () => {
-            mountedRef.current = false;
-            if (timeoutId) {
-                clearTimeout(timeoutId);
-            }
-            if (abortControllerRef.current) {
-                abortControllerRef.current.abort();
-            }
-        };
-    }, [execute, debounceMs]);
-
-    return { state, reload };
+  return { state, reload, refresh };
 }
