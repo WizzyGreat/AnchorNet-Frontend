@@ -20,7 +20,7 @@ const REFRESH_MS = 15_000;
  */
 export function MetricsBar() {
   const load = useCallback((signal: AbortSignal) => fetchMetrics(signal), []);
-  const { state, refresh } = useAsync(load);
+  const { state, reload: refresh } = useAsync(load);
   useInterval(refresh, REFRESH_MS);
 
   // Tracks user-initiated refreshes only, so the button spinner doesn't
