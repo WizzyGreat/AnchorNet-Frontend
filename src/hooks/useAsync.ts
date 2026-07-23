@@ -5,7 +5,7 @@ import { isAbortError } from "@/lib/api";
 
 export type AsyncState<T> =
     | { status: "loading" }
-    | { status: "error"; message: string }
+    | { status: "error"; message: string; error?: unknown }
     | { status: "ready"; data: T };
 
 interface UseAsyncOptions {
@@ -31,6 +31,7 @@ export function useAsync<T>(
     const abortControllerRef = useRef<AbortController | null>(null);
     const mountedRef = useRef(true);
     const reloadRef = useRef<() => void>(() => {});
+    const refreshWaiters = useRef<Array<() => void>>([]);
 
     const execute = useCallback(
         async (signal: AbortSignal) => {
@@ -40,12 +41,21 @@ export function useAsync<T>(
                     setState({ status: "ready", data });
                 }
             } catch (err) {
-                if (isAbortError(err)) return;
+                // Swallow deliberate cancellations
+                if (isAbortError(err) || (err instanceof Error && err.name === "AbortError")) {
+                    return;
+                }
                 if (mountedRef.current) {
                     setState({
                         status: "error",
                         message: err instanceof Error ? err.message : "Request failed",
+                        error: err,
                     });
+                }
+            } finally {
+                // Resolve any waiters
+                if (!signal.aborted) {
+                    refreshWaiters.current.splice(0).forEach((resolve) => resolve());
                 }
             }
         },

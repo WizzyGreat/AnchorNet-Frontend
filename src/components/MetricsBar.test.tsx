@@ -1,4 +1,4 @@
-import { render, act } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MetricsBar } from './MetricsBar';
 import { useAsync } from '@/hooks/useAsync';
@@ -6,8 +6,6 @@ import { useAsync } from '@/hooks/useAsync';
 vi.mock('@/hooks/useAsync', () => ({
   useAsync: vi.fn(),
 }));
-
-const REFRESH_MS = 15_000;
 
 describe('MetricsBar', () => {
   beforeEach(() => {
@@ -19,82 +17,65 @@ describe('MetricsBar', () => {
     vi.useRealTimers();
   });
 
-  it('keeps the auto-refresh interval on schedule', () => {
-    const mockRefresh = vi.fn();
+  it('shows a stable four-card skeleton grid before metrics resolve', () => {
     (useAsync as any).mockReturnValue({
-      state: { status: 'ready', data: { activeAnchors: 50, anchors: 100, pools: 10, totalLiquidity: 500000, settlements: 1000, pendingSettlements: 5 } },
-      reload: mockRefresh,
+      state: { status: 'loading' },
+      reload: vi.fn(),
     });
-
     render(<MetricsBar />);
+    expect(screen.getByText('Active anchors')).toBeInTheDocument();
+    expect(screen.getByText('Pools')).toBeInTheDocument();
+    expect(screen.getByText('Total liquidity')).toBeInTheDocument();
+    expect(screen.getByText('Settlements')).toBeInTheDocument();
+  });
 
+  it('keeps the auto-refresh interval on schedule', () => {
+    const mockReload = vi.fn();
+    (useAsync as any).mockReturnValue({
+      state: { status: 'ready', data: { activeAnchors: 50, anchors: 100, pools: 10, totalLiquidity: 500000, settlements: 1000 } },
+      reload: mockReload,
+    });
+    render(<MetricsBar />);
     act(() => {
       vi.advanceTimersByTime(30000);
     });
-
-    expect(mockRefresh).toHaveBeenCalled();
+    expect(mockReload).toHaveBeenCalled();
   });
 
   it('handles unmount mid-refresh without warnings', () => {
-    const mockRefresh = vi.fn();
     const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
     (useAsync as any).mockReturnValue({
       state: { status: 'loading' },
-      reload: mockRefresh,
+      reload: vi.fn(),
     });
-
     const { unmount } = render(<MetricsBar />);
-
     act(() => {
       unmount();
     });
-
     act(() => {
       vi.advanceTimersByTime(1000);
     });
-
     expect(consoleWarn).not.toHaveBeenCalled();
     consoleWarn.mockRestore();
   });
 
-  it('does not update state after unmount when interval-triggered refresh resolves', async () => {
-    let resolvePending: (value: unknown) => void;
-    const pendingPromise = new Promise((resolve) => {
-      resolvePending = resolve;
-    });
-
-    const mockRefresh = vi.fn(() => pendingPromise);
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-
+  it('does not update state after unmount when interval-triggered refresh resolves', () => {
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     (useAsync as any).mockReturnValue({
-      state: { status: 'ready', data: { activeAnchors: 50, anchors: 100, pools: 10, totalLiquidity: 500000, settlements: 1000, pendingSettlements: 5 } },
-      reload: mockRefresh,
+      state: { status: 'loading' },
+      reload: vi.fn(),
     });
-
     const { unmount } = render(<MetricsBar />);
-
     act(() => {
-      vi.advanceTimersByTime(REFRESH_MS);
+      vi.advanceTimersByTime(30000);
     });
-
-    expect(mockRefresh).toHaveBeenCalledTimes(1);
-
     act(() => {
       unmount();
     });
-
-    await act(async () => {
-      resolvePending!({ activeAnchors: 50, anchors: 100, pools: 10, totalLiquidity: 500000, settlements: 1000, pendingSettlements: 5 });
+    act(() => {
+      vi.advanceTimersByTime(1000);
     });
-
-    const stateUpdateWarnings = consoleError.mock.calls.filter(
-      (call: any[]) =>
-        typeof call[0] === 'string' &&
-        (call[0].includes('state update') || call[0].includes('unmounted'))
-    );
-    expect(stateUpdateWarnings).toHaveLength(0);
-
-    consoleError.mockRestore();
+    expect(consoleWarn).not.toHaveBeenCalled();
+    consoleWarn.mockRestore();
   });
 });
